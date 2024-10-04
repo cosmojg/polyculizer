@@ -20,7 +20,16 @@ let options = {
        }
    }
 };
+let urlData = decodeURLToGraph();
+if (urlData) {
+    nodes.add(urlData.nodes);
+    edges.add(urlData.edges);
+}
 let network = new vis.Network(container, data, options);
+
+network.on("afterDrawing", function (ctx) {
+    saveGraph();
+});
 
 // Function to add a node
 function addNode() {
@@ -98,25 +107,58 @@ function removeNode() {
     }
 }
 
+// Function to encode graph data to URL
+function encodeGraphToURL(graphData) {
+    const params = new URLSearchParams();
+    const nodesData = graphData.nodes.map(node => ({id: node.id, label: node.label}));
+    const edgesData = graphData.edges.map(edge => ({from: edge.from, to: edge.to}));
+    params.set('nodes', JSON.stringify(nodesData));
+    params.set('edges', JSON.stringify(edgesData));
+    return params.toString();
+}
+
+// Function to update the URL with graph data
+function updateURL(graphData) {
+    const encodedData = encodeGraphToURL(graphData);
+    window.history.replaceState({}, '', `${window.location.pathname}?${encodedData}`);
+}
+
+// Function to decode URL parameters
+function decodeURLToGraph() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const nodesData = params.get('nodes');
+        const edgesData = params.get('edges');
+        if (nodesData && edgesData) {
+            return {
+                nodes: JSON.parse(nodesData),
+                edges: JSON.parse(edgesData)
+            };
+        }
+    } catch (error) {
+        console.error('Error decoding URL data:', error);
+    }
+    return null;
+}
+
 // Function to save the current graph
 function saveGraph() {
     let data = {
         nodes: nodes.get(),
         edges: edges.get()
     };
-    localStorage.setItem('savedGraph', JSON.stringify(data));
-    alert('Graph saved!');
+    updateURL(data);
 }
 
 // Function to load a saved graph
 function loadGraph() {
-    let savedData = localStorage.getItem('savedGraph');
-    if (savedData) {
-        let data = JSON.parse(savedData);
+    let urlData = decodeURLToGraph();
+    if (urlData) {
         nodes.clear();
         edges.clear();
-        nodes.add(data.nodes);
-        edges.add(data.edges);
+        nodes.add(urlData.nodes);
+        edges.add(urlData.edges);
+        network.fit();
         alert('Graph loaded!');
     } else {
         alert('No saved graph found!');
