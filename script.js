@@ -70,7 +70,8 @@ function renameNode() {
     if (oldName && newName) {
         if (nodes.get(oldName)) {
             if (!nodes.get(newName)) {
-                nodes.update({ id: oldName, label: newName });
+                nodes.remove(oldName);
+                nodes.add({ id: newName, label: newName });
                 edges.forEach((edge) => {
                     if (edge.from === oldName) {
                         edges.update({ id: edge.id, from: newName });
@@ -109,12 +110,10 @@ function removeNode() {
 
 // Function to encode graph data to URL
 function encodeGraphToURL(graphData) {
-    const params = new URLSearchParams();
-    const nodesData = graphData.nodes.map(node => ({id: node.id, label: node.label}));
+    const nodesData = graphData.nodes.map(node => node.id);
     const edgesData = graphData.edges.map(edge => ({from: edge.from, to: edge.to}));
-    params.set('nodes', JSON.stringify(nodesData));
-    params.set('edges', JSON.stringify(edgesData));
-    return params.toString();
+    const encodedData = rison.encode({nodes: nodesData, edges: edgesData});
+    return `data=${encodeURIComponent(encodedData)}`;
 }
 
 // Function to update the URL with graph data
@@ -127,16 +126,12 @@ function updateURL(graphData) {
 function decodeURLToGraph() {
     try {
         const params = new URLSearchParams(window.location.search);
-        const nodesData = params.get('nodes');
-        const edgesData = params.get('edges');
-        if (nodesData && edgesData) {
-            return {
-                nodes: JSON.parse(nodesData),
-                edges: JSON.parse(edgesData)
-            };
+        const encodedData = params.get('data');
+        if (encodedData) {
+            return rison.decode(decodeURIComponent(encodedData));
         }
     } catch (error) {
-        console.error('Error decoding URL data:', error);
+        console.error('Error decoding URL:', error);
     }
     return null;
 }
@@ -156,7 +151,9 @@ function loadGraph() {
     if (urlData) {
         nodes.clear();
         edges.clear();
-        nodes.add(urlData.nodes);
+        urlData.nodes.forEach(nodeId => {
+            nodes.add({ id: nodeId, label: nodeId });
+        });
         edges.add(urlData.edges);
         network.fit();
         alert('Graph loaded!');
@@ -172,3 +169,6 @@ document.getElementById('rename-node').addEventListener('click', renameNode);
 document.getElementById('remove-node-btn').addEventListener('click', removeNode);
 document.getElementById('save-graph').addEventListener('click', saveGraph);
 document.getElementById('load-graph').addEventListener('click', loadGraph);
+if (typeof rison === 'undefined') {
+    console.error('Rison library is not loaded. Make sure to include it in your HTML.');
+}
