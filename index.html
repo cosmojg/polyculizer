@@ -1,0 +1,26 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Interactive Graph Visualizer</title>
+     <link rel="stylesheet" href="styles.css">
+     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+ </head>
+ <body>
+     <div id="graph-container"></div>
+     <div id="controls">
+         <input type="text" id="node-name" placeholder="Node name">
+         <button id="add-node">Add Node</button>
+         <input type="text" id="edge-from" placeholder="From node">
+         <input type="text" id="edge-to" placeholder="To node">
+         <button id="add-edge">Add Edge</button>
+         <input type="text" id="rename-old" placeholder="Old name">
+         <input type="text" id="rename-new" placeholder="New name">
+         <button id="rename-node">Rename Node</button>
+         <input type="text" id="remove-node" placeholder="Node to remove">
+         <button id="remove-node-btn">Remove Node</button>
+     </div>
+     <script src="script.js"></script>
+ </body>
+ </html>
