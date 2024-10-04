@@ -51,6 +51,7 @@ function addNode() {
     }
     nodes.add({ id: nodeName, label: nodeName });
     document.getElementById('node-name').value = '';
+    updateDropdowns();
     saveGraph();
 }
 
@@ -68,8 +69,6 @@ function addEdge() {
     }
     const edgeId = createEdgeId(fromNode, toNode);
     edges.add({ id: edgeId, from: fromNode, to: toNode });
-    document.getElementById('edge-from').value = '';
-    document.getElementById('edge-to').value = '';
     saveGraph();
 }
 
@@ -111,6 +110,7 @@ function renameNode() {
     
     document.getElementById('rename-old').value = '';
     document.getElementById('rename-new').value = '';
+    updateDropdowns();
     saveGraph();
 }
 
@@ -132,6 +132,7 @@ function removeNode() {
     edges.remove(edgesToRemove.map(edge => edge.id));
     nodes.remove(nodeName);
     document.getElementById('remove-node').value = '';
+    updateDropdowns();
     saveGraph();
 }
 
@@ -198,6 +199,8 @@ function initializeGraph() {
     }
     network = new vis.Network(container, data, options);
     network.on("afterDrawing", saveGraph);
+    updateDropdowns();
+    setupEnterKeyListeners();
 }
 
 // Add event listeners
@@ -208,6 +211,34 @@ document.getElementById('remove-node-btn').addEventListener('click', removeNode)
 document.getElementById('save-graph').addEventListener('click', saveGraph);
 document.getElementById('load-graph').addEventListener('click', loadGraph);
 
+// Setup Enter key listeners
+setupEnterKeyListeners();
+
 if (typeof rison === 'undefined') {
     console.error('Rison library is not loaded. Make sure to include it in your HTML.');
+}
+function updateDropdowns() {
+    const nodeIds = nodes.getIds();
+    const dropdowns = ['edge-from', 'edge-to', 'rename-old', 'remove-node'];
+    
+    dropdowns.forEach(id => {
+        const select = document.getElementById(id);
+        select.innerHTML = '';
+        nodeIds.forEach(nodeId => {
+            const option = document.createElement('option');
+            option.value = nodeId;
+            option.text = nodeId;
+            select.appendChild(option);
+        });
+    });
+}
+function handleEnterKey(event, actionFunction) {
+    if (event.key === 'Enter') {
+        actionFunction();
+    }
+}
+
+function setupEnterKeyListeners() {
+    document.getElementById('node-name').addEventListener('keyup', (event) => handleEnterKey(event, addNode));
+    document.getElementById('rename-new').addEventListener('keyup', (event) => handleEnterKey(event, renameNode));
 }
