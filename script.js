@@ -98,6 +98,13 @@ function removeNode() {
     let nodeName = document.getElementById('remove-node').value.trim();
     if (nodeName) {
         if (nodes.get(nodeName)) {
+            // Remove all edges connected to this node
+            let edgesToRemove = edges.get().filter(edge => 
+                edge.from === nodeName || edge.to === nodeName
+            );
+            edges.remove(edgesToRemove);
+
+            // Remove the node
             nodes.remove(nodeName);
             document.getElementById('remove-node').value = '';
         } else {
@@ -113,7 +120,7 @@ function encodeGraphToURL(graphData) {
     const nodesData = graphData.nodes.map(node => node.id);
     const edgesData = graphData.edges.map(edge => ({from: edge.from, to: edge.to}));
     const encodedData = rison.encode({nodes: nodesData, edges: edgesData});
-    return `data=${encodeURIComponent(encodedData)}`;
+    return `data=${encodedData}`;
 }
 
 // Function to update the URL with graph data
@@ -128,7 +135,7 @@ function decodeURLToGraph() {
         const params = new URLSearchParams(window.location.search);
         const encodedData = params.get('data');
         if (encodedData) {
-            return rison.decode(decodeURIComponent(encodedData));
+            return rison.decode(encodedData);
         }
     } catch (error) {
         console.error('Error decoding URL:', error);
