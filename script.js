@@ -1,12 +1,25 @@
 // Initialize the graph
+// Helper functions
+const createEdgeId = (from, to) => `${from}-${to}`;
+const nodeExists = (nodeId) => nodes.get(nodeId) !== null;
+
+// Debounce function
+const debounce = (func, delay) => {
+    let inDebounce;
+    return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(inDebounce);
+        inDebounce = setTimeout(() => func.apply(context, args), delay);
+    }
+}
+
+// Initialize the graph
 let nodes = new vis.DataSet();
 let edges = new vis.DataSet();
 
 let container = document.getElementById('graph-container');
-let data = {
-   nodes: nodes,
-   edges: edges
-};
+let data = { nodes, edges };
 let options = {
    physics: {
        enabled: true,
@@ -20,111 +33,117 @@ let options = {
        }
    }
 };
-let urlData = decodeURLToGraph();
-if (urlData) {
-    nodes.add(urlData.nodes);
-    edges.add(urlData.edges);
-}
-let network = new vis.Network(container, data, options);
+let network;
 
-network.on("afterDrawing", function (ctx) {
-    saveGraph();
-});
+// Call initializeGraph when the page loads
+document.addEventListener('DOMContentLoaded', initializeGraph);
 
 // Function to add a node
 function addNode() {
-    let nodeName = document.getElementById('node-name').value.trim();
-    if (nodeName) {
-        if (!nodes.get(nodeName)) {
-            nodes.add({ id: nodeName, label: nodeName });
-            document.getElementById('node-name').value = '';
-        } else {
-            alert('A node with this name already exists!');
-        }
-    } else {
+    const nodeName = document.getElementById('node-name').value.trim();
+    if (!nodeName) {
         alert('Please enter a node name!');
+        return;
     }
+    if (nodeExists(nodeName)) {
+        alert('A node with this name already exists!');
+        return;
+    }
+    nodes.add({ id: nodeName, label: nodeName });
+    document.getElementById('node-name').value = '';
+    saveGraph();
 }
 
 // Function to add an edge
 function addEdge() {
-    let fromNode = document.getElementById('edge-from').value.trim();
-    let toNode = document.getElementById('edge-to').value.trim();
-    if (fromNode && toNode) {
-        if (nodes.get(fromNode) && nodes.get(toNode)) {
-            edges.add({ from: fromNode, to: toNode });
-            document.getElementById('edge-from').value = '';
-            document.getElementById('edge-to').value = '';
-        } else {
-            alert('One or both of the specified nodes do not exist!');
-        }
-    } else {
+    const fromNode = document.getElementById('edge-from').value.trim();
+    const toNode = document.getElementById('edge-to').value.trim();
+    if (!fromNode || !toNode) {
         alert('Please enter both from and to node names!');
+        return;
     }
+    if (!nodeExists(fromNode) || !nodeExists(toNode)) {
+        alert('One or both of the specified nodes do not exist!');
+        return;
+    }
+    const edgeId = createEdgeId(fromNode, toNode);
+    edges.add({ id: edgeId, from: fromNode, to: toNode });
+    document.getElementById('edge-from').value = '';
+    document.getElementById('edge-to').value = '';
+    saveGraph();
 }
 
 // Function to rename a node
 function renameNode() {
-    let oldName = document.getElementById('rename-old').value.trim();
-    let newName = document.getElementById('rename-new').value.trim();
-    if (oldName && newName) {
-        if (nodes.get(oldName)) {
-            if (!nodes.get(newName)) {
-                nodes.remove(oldName);
-                nodes.add({ id: newName, label: newName });
-                edges.forEach((edge) => {
-                    if (edge.from === oldName) {
-                        edges.update({ id: edge.id, from: newName });
-                    }
-                    if (edge.to === oldName) {
-                        edges.update({ id: edge.id, to: newName });
-                    }
-                });
-                document.getElementById('rename-old').value = '';
-                document.getElementById('rename-new').value = '';
-            } else {
-                alert('A node with the new name already exists!');
-            }
-        } else {
-            alert('The node to rename does not exist!');
-        }
-    } else {
+    const oldName = document.getElementById('rename-old').value.trim();
+    const newName = document.getElementById('rename-new').value.trim();
+    if (!oldName || !newName) {
         alert('Please enter both old and new node names!');
+        return;
     }
+    if (!nodeExists(oldName)) {
+        alert('The node to rename does not exist!');
+        return;
+    }
+    if (nodeExists(newName)) {
+        alert('A node with the new name already exists!');
+        return;
+    }
+    
+    nodes.remove(oldName);
+    nodes.add({ id: newName, label: newName });
+    
+    edges.get().forEach((edge) => {
+        let newEdge = { ...edge };
+        if (edge.from === oldName) {
+            newEdge.from = newName;
+            newEdge.id = createEdgeId(newName, edge.to);
+        }
+        if (edge.to === oldName) {
+            newEdge.to = newName;
+            newEdge.id = createEdgeId(edge.from, newName);
+        }
+        if (newEdge.from !== edge.from || newEdge.to !== edge.to) {
+            edges.remove(edge.id);
+            edges.add(newEdge);
+        }
+    });
+    
+    document.getElementById('rename-old').value = '';
+    document.getElementById('rename-new').value = '';
+    saveGraph();
 }
 
 // Function to remove a node
 function removeNode() {
-    let nodeName = document.getElementById('remove-node').value.trim();
-    if (nodeName) {
-        if (nodes.get(nodeName)) {
-            // Remove all edges connected to this node
-            let edgesToRemove = edges.get().filter(edge => 
-                edge.from === nodeName || edge.to === nodeName
-            );
-            edges.remove(edgesToRemove);
-
-            // Remove the node
-            nodes.remove(nodeName);
-            document.getElementById('remove-node').value = '';
-        } else {
-            alert('The node to remove does not exist!');
-        }
-    } else {
+    const nodeName = document.getElementById('remove-node').value.trim();
+    if (!nodeName) {
         alert('Please enter a node name to remove!');
+        return;
     }
+    if (!nodeExists(nodeName)) {
+        alert('The node to remove does not exist!');
+        return;
+    }
+    
+    const edgesToRemove = edges.get().filter(edge => 
+        edge.from === nodeName || edge.to === nodeName
+    );
+    edges.remove(edgesToRemove.map(edge => edge.id));
+    nodes.remove(nodeName);
+    document.getElementById('remove-node').value = '';
+    saveGraph();
 }
 
 // Function to encode graph data to URL
 function encodeGraphToURL(graphData) {
     const nodesData = graphData.nodes.map(node => node.id);
-    const edgesData = graphData.edges.map(edge => ({from: edge.from, to: edge.to}));
-    const encodedData = rison.encode({nodes: nodesData, edges: edgesData});
-    return `data=${encodedData}`;
+    const edgesData = graphData.edges.map(edge => edge.id);
+    return `data=${rison.encode({nodes: nodesData, edges: edgesData})}`;
 }
 
 // Function to update the URL with graph data
-function updateURL(graphData) {
+const updateURL = (graphData) => {
     const encodedData = encodeGraphToURL(graphData);
     window.history.replaceState({}, '', `${window.location.pathname}?${encodedData}`);
 }
@@ -134,39 +153,51 @@ function decodeURLToGraph() {
     try {
         const params = new URLSearchParams(window.location.search);
         const encodedData = params.get('data');
-        if (encodedData) {
-            return rison.decode(encodedData);
-        }
+        return encodedData ? rison.decode(encodedData) : null;
     } catch (error) {
         console.error('Error decoding URL:', error);
+        return null;
     }
-    return null;
 }
 
 // Function to save the current graph
-function saveGraph() {
-    let data = {
-        nodes: nodes.get(),
-        edges: edges.get()
-    };
-    updateURL(data);
-}
+const saveGraph = debounce(() => {
+    updateURL({ nodes: nodes.get(), edges: edges.get() });
+}, 500);
 
 // Function to load a saved graph
 function loadGraph() {
-    let urlData = decodeURLToGraph();
+    const urlData = decodeURLToGraph();
+    if (!urlData) {
+        alert('No saved graph found!');
+        return;
+    }
+    nodes.clear();
+    edges.clear();
+    urlData.nodes.forEach(nodeId => {
+        nodes.add({ id: nodeId, label: nodeId });
+    });
+    urlData.edges.forEach(edgeId => {
+        const [from, to] = edgeId.split('-');
+        edges.add({ id: edgeId, from, to });
+    });
+    network.fit();
+    alert('Graph loaded!');
+}
+
+function initializeGraph() {
+    const urlData = decodeURLToGraph();
     if (urlData) {
-        nodes.clear();
-        edges.clear();
         urlData.nodes.forEach(nodeId => {
             nodes.add({ id: nodeId, label: nodeId });
         });
-        edges.add(urlData.edges);
-        network.fit();
-        alert('Graph loaded!');
-    } else {
-        alert('No saved graph found!');
+        urlData.edges.forEach(edgeId => {
+            const [from, to] = edgeId.split('-');
+            edges.add({ id: edgeId, from, to });
+        });
     }
+    network = new vis.Network(container, data, options);
+    network.on("afterDrawing", saveGraph);
 }
 
 // Add event listeners
@@ -176,6 +207,7 @@ document.getElementById('rename-node').addEventListener('click', renameNode);
 document.getElementById('remove-node-btn').addEventListener('click', removeNode);
 document.getElementById('save-graph').addEventListener('click', saveGraph);
 document.getElementById('load-graph').addEventListener('click', loadGraph);
+
 if (typeof rison === 'undefined') {
     console.error('Rison library is not loaded. Make sure to include it in your HTML.');
 }
