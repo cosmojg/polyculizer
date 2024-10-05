@@ -31,6 +31,34 @@ let options = {
            damping: 0.09,
            avoidOverlap: 0
        }
+   },
+   nodes: {
+       shape: 'circle',
+       size: 25,
+       font: {
+           size: 14,
+           color: '#ffffff'
+       },
+       color: {
+           background: '#3498db',
+           border: '#2980b9',
+           highlight: {
+               background: '#2ecc71',
+               border: '#27ae60'
+           }
+       },
+       borderWidth: 2
+   },
+   edges: {
+       width: 2,
+       color: {
+           color: '#7f8c8d',
+           highlight: '#95a5a6',
+           hover: '#bdc3c7'
+       },
+       smooth: {
+           type: 'continuous'
+       }
    }
 };
 let network;
