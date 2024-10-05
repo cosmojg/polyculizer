@@ -1,19 +1,21 @@
 // Helper functions
 const createEdgeId = (from, to) => `${from}-${to}`;
-const nodesMap = new Map();
-const nodeExists = (nodeId) => nodesMap.has(nodeId);
+const nodeExists = (nodeId) => nodes.get(nodeId) !== null;
 
 // Debounce function
 const debounce = (func, delay) => {
-  let timeout;
-  return (...args) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), delay);
+  let inDebounce;
+  return function () {
+    const context = this;
+    const args = arguments;
+    clearTimeout(inDebounce);
+    inDebounce = setTimeout(() => func.apply(context, args), delay);
   };
 };
 
 // Initialize the graph
-const { nodes, edges } = new vis.DataSet();
+const nodes = new vis.DataSet();
+const edges = new vis.DataSet();
 
 const container = document.getElementById("graph-container");
 const data = { nodes, edges };
@@ -85,8 +87,12 @@ function addNode() {
 function addEdge() {
   const fromNode = document.getElementById("edge-from").value.trim();
   const toNode = document.getElementById("edge-to").value.trim();
-  if (!fromNode || !toNode || !nodeExists(fromNode) || !nodeExists(toNode)) {
-    alert("Please select valid from and to nodes!");
+  if (!fromNode || !toNode) {
+    alert("Please enter both from and to node names!");
+    return;
+  }
+  if (!nodeExists(fromNode) || !nodeExists(toNode)) {
+    alert("One or both of the specified nodes do not exist!");
     return;
   }
   const edgeId = createEdgeId(fromNode, toNode);
@@ -166,7 +172,7 @@ function encodeGraphToURL(graphData) {
 }
 
 // Function to update the URL with graph data
-const updateURL = async (graphData) => {
+const updateURL = (graphData) => {
   const encodedData = encodeGraphToURL(graphData);
   window.history.replaceState(
     {},
@@ -188,10 +194,9 @@ function decodeURLToGraph() {
 }
 
 // Function to save the current graph
-async function saveGraph() {
-  const graphData = { nodes: nodes.get(), edges: edges.get() };
-  await updateURL(graphData);
-}
+const saveGraph = debounce(() => {
+  updateURL({ nodes: nodes.get(), edges: edges.get() });
+}, 500);
 
 // Function to load a saved graph
 function loadGraph() {
@@ -215,13 +220,15 @@ function loadGraph() {
 
 function initializeGraph() {
   const urlData = decodeURLToGraph();
-  urlData?.nodes?.forEach((nodeId) => {
-    nodes.add({ id: nodeId, label: nodeId });
-  });
-  urlData?.edges?.forEach((edgeId) => {
-    const [from, to] = edgeId.split("-");
-    edges.add({ id: edgeId, from, to });
-  });
+  if (urlData) {
+    urlData.nodes.forEach((nodeId) => {
+      nodes.add({ id: nodeId, label: nodeId });
+    });
+    urlData.edges.forEach((edgeId) => {
+      const [from, to] = edgeId.split("-");
+      edges.add({ id: edgeId, from, to });
+    });
+  }
   network = new vis.Network(container, data, options);
   network.on("afterDrawing", saveGraph);
   updateDropdowns();
@@ -229,14 +236,14 @@ function initializeGraph() {
 }
 
 // Add event listeners
-document.getElementById("controls").addEventListener("click", (event) => {
-  if (event.target.tagName === "BUTTON") {
-    const action = event.target.id.replace("-btn", "");
-    if (typeof window[action] === "function") {
-      window[action]();
-    }
-  }
-});
+document.getElementById("add-node").addEventListener("click", addNode);
+document.getElementById("add-edge").addEventListener("click", addEdge);
+document.getElementById("rename-node").addEventListener("click", renameNode);
+document
+  .getElementById("remove-node-btn")
+  .addEventListener("click", removeNode);
+document.getElementById("save-graph").addEventListener("click", saveGraph);
+document.getElementById("load-graph").addEventListener("click", loadGraph);
 
 // Setup Enter key listeners
 setupEnterKeyListeners();
@@ -247,14 +254,18 @@ if (typeof rison === "undefined") {
   );
 }
 function updateDropdowns() {
-  const nodeIds = new Set(nodes.getIds());
+  const nodeIds = nodes.getIds();
   const dropdowns = ["edge-from", "edge-to", "rename-old", "remove-node"];
 
   dropdowns.forEach((id) => {
     const select = document.getElementById(id);
-    select.innerHTML = Array.from(nodeIds)
-      .map((nodeId) => `<option value="${nodeId}">${nodeId}</option>`)
-      .join("");
+    select.innerHTML = "";
+    nodeIds.forEach((nodeId) => {
+      const option = document.createElement("option");
+      option.value = nodeId;
+      option.text = nodeId;
+      select.appendChild(option);
+    });
   });
 }
 function handleEnterKey(event, actionFunction) {
