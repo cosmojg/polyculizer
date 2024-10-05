@@ -1,31 +1,40 @@
- <!DOCTYPE html>
- <html lang="en">
- <head>
-     <script src="https://cdnjs.cloudflare.com/ajax/libs/rison/0.1.1/rison.js"></script>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <title>Polyculizer!</title>
-     <link rel="stylesheet" href="styles.css">
-     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
- </head>
- <body>
-     <div id="app-container">
-         <div id="graph-container"></div>
-         <div id="sidebar">
-             <div id="controls">
-                 <input type="text" id="node-name" placeholder="Node name">
-                 <button id="add-node">Add Node</button>
-                 <select id="edge-from" placeholder="From node"></select>
-                 <select id="edge-to" placeholder="To node"></select>
-                 <button id="add-edge">Add Edge</button>
-                 <select id="rename-old" placeholder="Old name"></select>
-                 <input type="text" id="rename-new" placeholder="New name">
-                 <button id="rename-node">Rename Node</button>
-                 <select id="remove-node" placeholder="Node to remove"></select>
-                 <button id="remove-node-btn">Remove Node</button>
-             </div>
-         </div>
-     </div>
-     <script src="script.js"></script>
- </body>
- </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/rison/0.1.1/rison.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polyculizer!</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+</head>
+<body>
+    <div id="app-container">
+        <div id="graph-container"></div>
+        <div id="sidebar">
+            <h2>Polyculizer!</h2>
+            <div id="controls">
+                <div class="control-group">
+                    <input type="text" id="node-name" placeholder="Node name">
+                    <button id="add-node">Add Node</button>
+                </div>
+                <div class="control-group">
+                    <select id="edge-from" placeholder="From node"></select>
+                    <select id="edge-to" placeholder="To node"></select>
+                    <button id="add-edge">Add Edge</button>
+                </div>
+                <div class="control-group">
+                    <select id="rename-old" placeholder="Old name"></select>
+                    <input type="text" id="rename-new" placeholder="New name">
+                    <button id="rename-node">Rename Node</button>
+                </div>
+                <div class="control-group">
+                    <select id="remove-node" placeholder="Node to remove"></select>
+                    <button id="remove-node-btn">Remove Node</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

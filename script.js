@@ -1,4 +1,3 @@
-// Initialize the graph
 // Helper functions
 const createEdgeId = (from, to) => `${from}-${to}`;
 const nodeExists = (nodeId) => nodes.get(nodeId) !== null;
@@ -15,21 +14,22 @@ const debounce = (func, delay) => {
 }
 
 // Initialize the graph
-let nodes = new vis.DataSet();
-let edges = new vis.DataSet();
+const nodes = new vis.DataSet();
+const edges = new vis.DataSet();
 
-let container = document.getElementById('graph-container');
-let data = { nodes, edges };
-let options = {
+const container = document.getElementById('graph-container');
+const data = { nodes, edges };
+const options = {
    physics: {
        enabled: true,
        barnesHut: {
+           theta: 0.5,
            gravitationalConstant: -2000,
            centralGravity: 0.3,
            springLength: 95,
-           springConstant: 0.04,
+           springConstant: 0.01,
            damping: 0.09,
-           avoidOverlap: 0
+           avoidOverlap: 0.1
        }
    },
    nodes: {
