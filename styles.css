@@ -112,3 +112,22 @@ button:active {
     font-size: 14px;
   }
 }
+#title-box {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#title-box h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+#controls {
+  margin-top: 20px;
+}
